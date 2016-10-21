@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>六子棋</title>
+    <style rel="stylesheet">
+        #game {
+            position: relative;
+        }
+
+        #board {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #edef92;
+        }
+
+        #seeds {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #seeds .seed {
+            border-radius: 50%;
+            cursor: pointer;
+            position: absolute;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game">
+    <canvas id="board" width="800" height="600"></canvas>
+    <div id="seeds"></div>
+</div>
+
+<script src="game.js"></script>
+
+
+</body>
+</html>
