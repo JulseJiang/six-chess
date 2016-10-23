@@ -1,5 +1,5 @@
 /**
- * 游戏类
+ * 游戏对象
  */
 var Game = {
     myChoose: 1, //我选择的棋子编号(1 or 2)
@@ -29,7 +29,7 @@ var Game = {
  * @param {Number} j 棋子在二维数组的纵坐标
  * @param {Number} color 棋子的颜色编号
  * @param {boolean} isSeed （可选）默认为true，表示是否显示玩家真实的棋子（opacity=1）
- * @returns {HTMLElement} seed 返回该棋子节点
+ * @returns {HTMLElement} 返回该棋子节点
  */
 var Seed = function (i, j, color, isSeed) {
     if (arguments.length < 3) {
@@ -82,31 +82,6 @@ var Seed = function (i, j, color, isSeed) {
 //让棋子类继承Game.seed
 Seed.prototype = Game.seed;
 
-/**
- * 点击棋子显示可能移动到的位置
- * @param {Array} site 点击棋子的坐标
- */
-Seed.getPossibleSites = function (site) {
-    var i = site[0];
-    var j = site[1];
-    var up = [i, j - 1];
-    var down = [i, j + 1];
-    var left = [i - 1, j];
-    var right = [i + 1, j];
-    var sites = [];
-    sites.push(up, down, left, right);
-
-    //过滤 排除错误的点或已存在的点
-    sites = sites.filter(function (s) {
-        var i = s[0];
-        var j = s[1];
-        return s[0] >= 0 && s[0] <= 3 && s[1] >= 0 && s[1] <= 3 && this.prototype.data[i][j] === 0;
-    }.bind(this));
-
-    return sites;
-};
-
-
 window.onload = function () {
     Game.initBoard();
     Game.initSeedData();
@@ -140,10 +115,6 @@ Game.initBoard = function () {
 
     /**
      * 绘制棋盘线
-     * @param x1:线开始位置x
-     * @param y1:线开始位置y
-     * @param x2:线结束位置x
-     * @param y2:线结束位置y
      */
     var drawLine = function (x1, y1, x2, y2) {
         c.beginPath();
@@ -176,6 +147,30 @@ Game.initSeedData = function () {
 };
 
 /**
+ * 点击棋子显示可能移动到的位置
+ * @param {Number} i 点击棋子的横坐标
+ * @param {Number} j 点击棋子的纵坐标
+ * @return {Array} 返回可以点击的坐标
+ */
+Game.getPossibleSites = function (i, j) {
+    var up = [i, j - 1];
+    var down = [i, j + 1];
+    var left = [i - 1, j];
+    var right = [i + 1, j];
+    var sites = [];
+    sites.push(up, down, left, right);
+
+    //过滤 排除错误的点或已存在的点
+    sites = sites.filter(function (s) {
+        var i = s[0];
+        var j = s[1];
+        return s[0] >= 0 && s[0] <= 3 && s[1] >= 0 && s[1] <= 3 && Game.seed.data[i][j] === 0;
+    }.bind(this));
+
+    return sites;
+};
+
+/**
  * 绘制棋子
  */
 Game.drawSeeds = function () {
@@ -197,30 +192,30 @@ Game.drawSeeds = function () {
 };
 
 /**
+ * 改变棋子样式
+ * @param {HTMLElement} ele 棋子节点
+ * @param {Array} colors 颜色数组
+ * @param {Number} color 颜色编号
+ * @param {Number} radius 半径
+ */
+Game.changeStyle = function (ele, colors, color, radius) {
+    var c = ele.getContext('2d');
+    var color1 = colors[color - 1][0];
+    var color2 = colors[color - 1][1];
+    var crg = c.createRadialGradient(radius, radius, radius / 2, radius, radius, radius - radius / 5);
+    crg.addColorStop(0, color1);
+    crg.addColorStop(1, color2);
+    c.fillStyle = crg;
+    c.arc(radius, radius, radius, 0, 2 * Math.PI);
+    c.fill();
+};
+
+/**
  * 处理棋子的点击事件
  */
 Game.handleSeedClick = function () {
     var clickSite = []; //用于保存点击的棋子位置
     var seedsNodes = document.getElementById('seeds');
-
-    /**
-     * 改变棋子样式
-     * @param {HTMLElement} ele 棋子节点
-     * @param {Array} colors 颜色数组
-     * @param {Number} color 颜色编号
-     * @param {Number} radius 半径
-     */
-    var changeStyle = function (ele, colors, color, radius) {
-        var c = ele.getContext('2d');
-        var color1 = colors[color - 1][0];
-        var color2 = colors[color - 1][1];
-        var crg = c.createRadialGradient(radius, radius, radius / 2, radius, radius, radius - radius / 5);
-        crg.addColorStop(0, color1);
-        crg.addColorStop(1, color2);
-        c.fillStyle = crg;
-        c.arc(radius, radius, radius, 0, 2 * Math.PI);
-        c.fill();
-    };
 
     //绑定事件
     seedsNodes.onclick = function (e) {
@@ -244,10 +239,10 @@ Game.handleSeedClick = function () {
 
                 //清除之前点击样式
                 if (clickSite.length === 2) {
-                    var clickNode = seedsNodes.querySelector('.seed[data-site="' + clickSite[0] + ',' + clickSite[1] + '"]');
+                    var clickNode = Game.getDOMNode(clickSite[0], clickSite[1]);
                     if (clickNode) {
-                        var cl = clickNode.getAttribute('data-color') - 0;
-                        changeStyle(clickNode, Game.seed.colors, cl, Game.seed.radius);
+                        var _color = clickNode.getAttribute('data-color') - 0;
+                        Game.changeStyle(clickNode, Game.seed.colors, _color, Game.seed.radius);
                     }
                 }
 
@@ -255,11 +250,11 @@ Game.handleSeedClick = function () {
                 clickSite = site;
 
                 //绘制可以移动的点
-                var sites = Seed.getPossibleSites(site);
+                var sites = Game.getPossibleSites(site[0], site[1]);
                 sites.forEach(function (data) {
                     new Seed(data[0], data[1], color, false);
                 });
-                changeStyle(target, Game.seed.clickColors, color, Game.seed.radius);
+                Game.changeStyle(target, Game.seed.clickColors, color, Game.seed.radius);
             }
         } else {
             //移动棋子
@@ -268,34 +263,197 @@ Game.handleSeedClick = function () {
             Game.loop = 3 - Game.loop;
             Game.drawSeeds();
 
-            Game.checkRules(site, color);
+            Game.checkRules(site);
 
-            console.log('轮到：' + Game.seed.colorText[Game.loop - 1]);
+            var f = Game.getWinner();
+            if (f >= 0) {
+                console.log(f);
+            }
+
+            //console.log('轮到：' + Game.seed.colorText[Game.loop - 1]);
 
         }
     }
 };
 
-Game.checkRules = function (site, color) {
-    var i = site[0];
-    var j = site[1];
-    var up = [i, j - 1];
-    var down = [i, j + 1];
-    var left = [i - 1, j];
-    var right = [i + 1, j];
-    var around = [up, down, left, right];
+/**
+ * 获取对应坐标的棋子颜色
+ * @param {Number} i 棋子横坐标
+ * @param {Number} j 棋子纵坐标
+ * @return {Number} 棋子颜色编号
+ */
+Game.getColor = function (i, j) {
+    if (i < 0 || i > 3 || j < 0 || j > 3) {
+        return 0;
+    } else {
+        return Game.seed.data[i][j];
+    }
+};
 
-    around = around.filter(function (s) {
-        return s[0] >= 0 && s[0] <= 3 && s[1] >= 0 && s[1] <= 3 && this.seed.data
-    }.bind(this));
+/**
+ * 获取对应坐标的DOM节点
+ * @param {Number} i 棋子横坐标
+ * @param {Number} j 棋子纵坐标
+ * @return {HTMLElement}
+ */
+Game.getDOMNode = function (i, j) {
+    return document.querySelector('#seeds .seed[data-site="' + i + ',' + j + '"]');
+};
 
-
-    this.seed.data.forEach(function (data, i) {
-        for (var j = 0; j < data.length; j++) {
+/**
+ * 消灭对方的棋子
+ * @param {Array} seeds 棋子的二维数组坐标
+ */
+Game.killOpt = function (seeds) {
+    seeds.forEach(function (data) {
+        var i = data[0];
+        var j = data[1];
+        var node = Game.getDOMNode(i, j);
+        Game.seed.data[i][j] = 0;
+        if (node) {
+            node.parentNode.removeChild(node);
+        } else {
+            Game.drawSeeds();
         }
     });
 };
 
+/**
+ * 获取棋子的剩余个数
+ * @param {Number} color 棋子颜色编号
+ */
+Game.getLength = function (color) {
+    var length = 0;
+    Game.seed.data.forEach(function (data) {
+        for (var i = 0; i < data.length; i++) {
+            if (data[i] === color) {
+                length++;
+            }
+        }
+    });
+    return length;
+};
+
+/**
+ * 查看获胜方
+ * @returns {Number} 获胜返回获胜方颜色编号，平局返回0，未判断输赢返回-1
+ */
+Game.getWinner = function () {
+
+    //检查是否该颜色方获胜
+    var checkWin = function (color) {
+        var optColor = 3 - color;
+        if (Game.getLength(optColor) === 0) {
+            return true;
+        } else {
+            var data = Game.seed.data;
+            for (var i = 0; i < data.length; i++) {
+                for (var j = 0; j < data[i].length; j++) {
+                    if (data[i][j] === optColor && Game.getPossibleSites(i, j).length > 0) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+    };
+
+    var myColor = this.myChoose;
+    var optColor = 3 - myColor;
+    var myLength = this.getLength(myColor);
+    var optLength = this.getLength(optColor);
+    if (myLength == 1 && optLength == 1) {
+        return 0;
+    } else if (checkWin(myColor)) {
+        return myColor;
+    } else if (checkWin(optColor)) {
+        return optColor;
+    } else {
+        return -1;
+    }
+};
+
+/**
+ * 检查规则
+ * @param {Array} site 最新移动的点坐标
+ */
+Game.checkRules = function (site) {
+    var killSeeds = [];
+    var i = site[0];
+    var j = site[1];
+    var color = this.getColor(i, j);
+    var optColor = 3 - color;
+
+    //如果己方剩余棋子数为 1
+    if (this.getLength(color) === 1) {
+        //up
+        if (this.getColor(i, j - 1) == optColor && this.getColor(i, j - 2) == optColor && this.getColor(i, j - 3) == 0 && this.getColor(i, j + 1) == 0) {
+            killSeeds.push([i, j - 1], [i, j - 2]);
+        }
+        //down
+        if (this.getColor(i, j + 1) == optColor && this.getColor(i, j + 2) == optColor && this.getColor(i, j + 3) == 0 && this.getColor(i, j - 1) == 0) {
+            killSeeds.push([i, j + 1], [i, j + 2]);
+        }
+        //left
+        if (this.getColor(i - 1, j) == optColor && this.getColor(i - 2, j) == optColor && this.getColor(i - 3, j) == 0 && this.getColor(i + 1, j) == 0) {
+            killSeeds.push([i - 1, j], [i - 2, j]);
+        }
+        //right
+        if (this.getColor(i + 1, j) == optColor && this.getColor(i + 2, j) == optColor && this.getColor(i + 3, j) == 0 && this.getColor(i - 1, j) == 0) {
+            killSeeds.push([i + 1, j], [i + 2, j]);
+        }
+        //middle_h
+        if (this.getColor(i - 1, j) == optColor && this.getColor(i + 1, j) == optColor && this.getColor(i - 2, j) == 0 && this.getColor(i + 2, j) == 0) {
+            killSeeds.push([i - 1, j], [i + 1, j]);
+        }
+
+        //middle_v
+        if (this.getColor(i, j - 1) == optColor && this.getColor(i, j + 1) == optColor && this.getColor(i, j - 2) == 0 && this.getColor(i, j + 2) == 0) {
+            killSeeds.push([i, j - 1], [i, j + 1]);
+        }
+
+        //消灭对手棋子
+        this.killOpt(killSeeds);
+
+        return;
+    }
+
+    //up
+    if (this.getColor(i, j - 1) == color && this.getColor(i, j - 2) == optColor && this.getColor(i, j - 3) == 0 && this.getColor(i, j + 1) == 0) {
+        killSeeds.push([i, j - 2]);
+    }
+    //down
+    if (this.getColor(i, j + 1) == color && this.getColor(i, j + 2) == optColor && this.getColor(i, j + 3) == 0 && this.getColor(i, j - 1) == 0) {
+        killSeeds.push([i, j + 2]);
+    }
+    //left
+    if (this.getColor(i - 1, j) == color && this.getColor(i - 2, j) == optColor && this.getColor(i - 3, j) == 0 && this.getColor(i + 1, j) == 0) {
+        killSeeds.push([i - 2, j]);
+    }
+    //right
+    if (this.getColor(i + 1, j) == color && this.getColor(i + 2, j) == optColor && this.getColor(i + 3, j) == 0 && this.getColor(i - 1, j) == 0) {
+        killSeeds.push([i + 2, j]);
+    }
+    //middle_up
+    if (this.getColor(i, j - 1) == color && this.getColor(i, j + 1) == optColor && this.getColor(i, j - 2) == 0 && this.getColor(i, j + 2) == 0) {
+        killSeeds.push([i, j + 1]);
+    }
+    //middle_down
+    if (this.getColor(i, j + 1) == color && this.getColor(i, j - 1) == optColor && this.getColor(i, j - 2) == 0 && this.getColor(i, j + 2) == 0) {
+        killSeeds.push([i, j - 1]);
+    }
+    //middle_left
+    if (this.getColor(i - 1, j) == color && this.getColor(i + 1, j) == optColor && this.getColor(i - 2, j) == 0 && this.getColor(i + 2, j) == 0) {
+        killSeeds.push([i + 1, j]);
+    }
+    //middle_right
+    if (this.getColor(i + 1, j) == color && this.getColor(i - 1, j) == optColor && this.getColor(i - 2, j) == 0 && this.getColor(i + 2, j) == 0) {
+        killSeeds.push([i - 1, j]);
+    }
+
+    //消灭对手的棋子
+    this.killOpt(killSeeds);
+};
 
 
 
