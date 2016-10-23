@@ -3,11 +3,7 @@
  * Created by CHEN on 2016/10/22.
  */
 
-/**
- * 开始游戏
- * Created by CHEN on 2016/10/23.
- */
-
+//入口
 window.onload = function () {
     Game.init();
     Game.handleInfoEvent();

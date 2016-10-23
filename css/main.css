@@ -1,7 +1,7 @@
 html, body, div, p, canvas, button, a, ul, li, span {
     padding: 0;
     margin: 0;
-    font-family: Arial, '微软雅黑', '宋体';
+    font-family: Arial, "微软雅黑";
 }
 
 .text-center {
@@ -206,4 +206,22 @@ button.block {
     margin-left: 0;
     margin-right: 10px;;
     float: right;
+}
+
+#logs {
+    position: relative;
+    top: 568px;
+    left: 680px;
+    width: 252px;
+    height: 54px;
+    background: #eee;
+    padding: 10px;
+    font-size: 12px;
+    overflow-y: auto;
+    border-radius: 3px;
+    color: #333;
+}
+
+#logs p.error{
+    color:#f00;
 }
