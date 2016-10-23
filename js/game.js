@@ -1,12 +1,17 @@
 /**
+ * Created by CHEN on 2016/10/21.
+ */
+
+/**
  * 游戏对象
  */
 var Game = {
     myChoose: 1, //我选择的棋子编号(1 or 2)
-    loop: 0, //轮流编号
+    loop: 1, //轮流编号
+    isStart: false, //游戏是否已经开始
     board: {
-        x: 70, //棋盘左上角位置x
-        y: 60, //棋盘左上角位置y
+        x: 100, //棋盘左上角位置x
+        y: 80, //棋盘左上角位置y
         width: 480, //长度能被3整除
         height: 480, //宽度能被3整除
         lineWidth: 12, //线宽为偶数
@@ -20,6 +25,17 @@ var Game = {
         clickColors: [['#999', '#000'], ['#fcfcfc', '#d8d8d8']], //点击棋子后的渐变颜色
         possibleOpacity: [0.2, 0.4], //棋子可以移动的位置的透明度
         colorText: ['黑棋', '白棋']
+    },
+    //保存一些游戏信息DOM节点
+    infoNodes: {
+        startGame: document.getElementById('startGame'),
+        chessList1: document.getElementById('chessList1'),
+        chessList2: document.getElementById('chessList2'),
+        loopColor: document.getElementById('loopColor'),
+        gameMessage: document.getElementById('gameMessage'),
+        defeat: document.getElementById('defeat'),
+        peace: document.getElementById('peace'),
+        startAgain: document.getElementById('startAgain')
     }
 };
 
@@ -82,12 +98,31 @@ var Seed = function (i, j, color, isSeed) {
 //让棋子类继承Game.seed
 Seed.prototype = Game.seed;
 
-window.onload = function () {
-    Game.initBoard();
-    Game.initSeedData();
-    Game.drawSeeds();
-};
+/**
+ * 游戏初始化
+ */
+Game.init = function () {
+    this.initBoard();
+    this.myChoose = 1;
+    this.loop = 1;
+    this.isStart = false;
+    this.initSeedData();
+    this.drawSeeds();
+    this.infoNodes.startGame.disabled = false;
+    this.infoNodes.startGame.innerHTML = '开始游戏';
+    document.querySelector('#chessList1 .label').innerHTML = this.seed.colorText[0];
+    document.querySelector('#chessList1 .num').innerHTML = '6';
+    document.querySelector('#chessList2 .label').innerHTML = this.seed.colorText[1];
+    document.querySelector('#chessList2 .num').innerHTML = '6';
+    this.infoNodes.loopColor.innerHTML = '_';
+    this.infoNodes.gameMessage.innerHTML = '请开始游戏';
 
+    //保存房间信息
+    if (localStorage && !localStorage.getItem('myRoom') || localStorage.getItem('myRoom').trim().length == 0) {
+        var room = hex_md5(new Date() + Math.random());
+        localStorage.setItem('myRoom', room);
+    }
+};
 
 /**
  * 初始化棋盘
@@ -102,7 +137,8 @@ Game.initBoard = function () {
     var lineColor = this.board.lineColor;
     var halfLineWidth = parseInt(lineWidth / 2);
 
-    var c = document.getElementById('board').getContext('2d');
+    var board = document.getElementById('board');
+    var c = board.getContext('2d');
 
     //绘制棋盘外边框
     c.lineWidth = lineWidth;
@@ -132,6 +168,7 @@ Game.initBoard = function () {
  * 初始化棋子数据（初始化二维数组）
  */
 Game.initSeedData = function () {
+    this.seed.data = [];
     var choose = this.myChoose;
     var opt = 3 - choose;
 
@@ -139,11 +176,13 @@ Game.initSeedData = function () {
     var row2 = [opt, 0, 0, choose];
     var row3 = [opt, 0, 0, choose];
     var row4 = [opt, opt, choose, choose];
+
+    /*var row1 = [opt, 0, 0, 0];
+    var row2 = [opt, opt, choose, 0];
+    var row3 = [opt, 0, 0, 0];
+    var row4 = [opt, 0, 0, 0];*/
+
     this.seed.data.push(row1, row2, row3, row4);
-    this.loop = 1;
-
-    console.log(Game.seed.colorText[Game.loop - 1] + ' 获得了先手');
-
 };
 
 /**
@@ -226,8 +265,8 @@ Game.handleSeedClick = function () {
         var isSeed = target.getAttribute('data-isSeed') === 'false' ? false : true;
 
         if (isSeed) {
-            if (color !== Game.loop) {
-                //return;
+            if (!Game.isStart || color !== Game.loop) {
+                return;
             }
 
             //点击棋子
@@ -260,18 +299,29 @@ Game.handleSeedClick = function () {
             //移动棋子
             Game.seed.data[clickSite[0]][clickSite[1]] = 0;
             Game.seed.data[site[0]][site[1]] = color;
-            Game.loop = 3 - Game.loop;
-            Game.drawSeeds();
-
             Game.checkRules(site);
+            Game.drawSeeds();
+            Game.loop = 3 - Game.loop;
+            Game.infoNodes.loopColor.innerHTML = Game.seed.colorText[Game.loop - 1];
+            document.querySelector('#chessList' + Game.loop + ' .num').innerHTML = Game.getLength(Game.loop);
 
-            var f = Game.getWinner();
-            if (f >= 0) {
-                console.log(f);
+            var winner = Game.getWinner();
+            if (winner >= 0) {
+                var result = '';
+                switch (winner) {
+                    case 0:
+                        result = '平局';
+                        break;
+                    default:
+                        result = Game.seed.colorText[winner - 1] + '赢了';
+                }
+                var mask = new Mask({
+                    title: '游戏结果',
+                    content: '游戏结束：' + result
+                });
+                Game.isStart = false;
+                Game.infoNodes.gameMessage.innerHTML = result;
             }
-
-            //console.log('轮到：' + Game.seed.colorText[Game.loop - 1]);
-
         }
     }
 };
@@ -414,7 +464,6 @@ Game.checkRules = function (site) {
 
         //消灭对手棋子
         this.killOpt(killSeeds);
-
         return;
     }
 
@@ -455,5 +504,60 @@ Game.checkRules = function (site) {
     this.killOpt(killSeeds);
 };
 
+/**
+ * 遮罩弹窗
+ * @param {object} property 弹窗属性
+ * @param {function} sureCB 确认按钮回调函数
+ * @param {function} cancelCB
+ * @constructor
+ */
+var Mask = function (property, sureCB, cancelCB) {
+    var box = document.getElementById('alertBox');
+    var title = document.querySelector('#alertBox .title');
+    var content = document.querySelector('#alertBox .content');
+    var sureBtn = document.querySelector('#alertBox .sureBtn');
+    var cancelBtn = document.querySelector('#alertBox .cancelBtn');
 
+    if (property.title !== undefined) {
+        title.innerHTML = property.title;
+    } else {
+        title.innerHTML = '消息';
+    }
+    if (property.content !== undefined) {
+        content.innerHTML = property.content;
+    } else {
+        content.innerHTML = '';
+    }
+    if (property.sureText !== undefined) {
+        sureBtn.innerHTML = property.sureText;
+    } else {
+        sureBtn.innerHTML = '确定';
+    }
+    if (property.cancelText !== undefined) {
+        cancelBtn.innerHTML = property.cancelText;
+    } else {
+        cancelBtn.innerHTML = '取消';
+    }
+    if (sureCB === undefined || typeof sureCB !== 'function') {
+        sureBtn.onclick = function () {
+            box.style.display = 'none';
+        }
+    } else {
+        sureBtn.onclick = sureCB;
+    }
+    if (cancelCB === undefined || typeof cancelCB !== 'function') {
+        cancelBtn.onclick = function () {
+            box.style.display = 'none';
+        }
+    } else {
+        cancelBtn.onclick = cancelCB;
+    }
+    sureBtn.disabled = false;
+    cancelBtn.disabled = false;
+    box.style.display = 'block';
 
+    //关闭遮罩方法
+    this.close = function () {
+        box.style.display = 'none';
+    }
+};
