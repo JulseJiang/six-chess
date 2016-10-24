@@ -6,7 +6,6 @@
 //入口
 window.onload = function () {
     Game.init();
-    Game.onlineInit();
     Game.handleInfoEvent();
     Client.init();
 };
@@ -15,17 +14,13 @@ window.onload = function () {
  * 开始游戏
  */
 Game.startOnlineGame = function () {
-    this.isStart = true;
-    this.loop = 1;
-    this.infoNodes.loopColor.innerHTML = this.seed.colorText[this.loop - 1];
-    this.infoNodes.gameMessage.innerHTML = '游戏中...';
-};
+    /*this.isStart = true;
+     this.loop = 1;
+     this.infoNodes.loopColor.innerHTML = this.seed.colorText[this.loop - 1];
+     this.infoNodes.gameMessage.innerHTML = '游戏中...';*/
+    Client.socket.emit('start', Client.getRoom());
+    Game.infoNodes.gameMessage.innerHTML = '等待对手开始游戏';
 
-/**
- * 在线版初始化
- */
-Game.onlineInit = function () {
-    this.infoNodes.gameMessage.innerHTML = '等待玩家进入...'
 };
 
 /**
@@ -40,18 +35,24 @@ Game.handleInfoEvent = function () {
 
     //开始游戏
     startGame.addEventListener('click', function (e) {
+        if (!Game.isReady) {
+            new Mask({
+                content: '玩家还没有进入房间，无法开始游戏.'
+            });
+            return;
+        }
         var target = e.target;
         target.disabled = true;
-        Game.startSingleGame();
+        Game.startOnlineGame();
     });
 
     //在线联机
     changeOnline.addEventListener('click', function () {
         var room;
-        if (localStorage && localStorage.getItem('myRoom').length == 32) {
+        if (localStorage && localStorage.getItem('myRoom').length == 10) {
             room = localStorage.getItem('myRoom');
         } else {
-            room = hex_md5(new Date() + Math.random());
+            room = hex_md5(new Date() + Math.random()).substr(0, 10);
         }
         var i = location.pathname.indexOf('/', 1);
         var path = location.pathname.substring(0, i);
@@ -71,7 +72,7 @@ Game.handleInfoEvent = function () {
             clipboard.on('success', function (e) {
                 target.disabled = true;
                 target.innerHTML = '已复制';
-                e.clearSelection();
+                //e.clearSelection();
                 location.href = e.text;
             });
             clipboard.on('error', function (e) {

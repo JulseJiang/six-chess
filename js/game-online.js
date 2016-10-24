@@ -8,6 +8,7 @@
 var Game = {
     myChoose: 1, //我选择的棋子编号(1 or 2)
     loop: 1, //轮流编号
+    isReady: false, //玩家是否已经就绪
     isStart: false, //游戏是否已经开始
     board: {
         x: 100, //棋盘左上角位置x
@@ -115,12 +116,12 @@ Game.init = function () {
     document.querySelector('#chessList2 .label').innerHTML = this.seed.colorText[1];
     document.querySelector('#chessList2 .num').innerHTML = '6';
     this.infoNodes.loopColor.innerHTML = '_';
-    this.infoNodes.gameMessage.innerHTML = '请开始游戏';
+    this.infoNodes.gameMessage.innerHTML = '等待玩家进入...';
 
     //保存房间信息
     if (localStorage && !localStorage.getItem('myRoom') || localStorage.getItem('myRoom').trim().length == 0) {
         var room = hex_md5(new Date() + Math.random());
-        localStorage.setItem('myRoom', room);
+        localStorage.setItem('myRoom', room.substr(0, 10));
     }
 };
 
@@ -178,9 +179,9 @@ Game.initSeedData = function () {
     var row4 = [opt, opt, choose, choose];
 
     /*var row1 = [opt, 0, 0, 0];
-    var row2 = [opt, opt, choose, 0];
-    var row3 = [opt, 0, 0, 0];
-    var row4 = [opt, 0, 0, 0];*/
+     var row2 = [opt, opt, choose, 0];
+     var row3 = [opt, 0, 0, 0];
+     var row4 = [opt, 0, 0, 0];*/
 
     this.seed.data.push(row1, row2, row3, row4);
 };
@@ -272,7 +273,7 @@ Game.handleSeedClick = function () {
             //点击棋子
             if (Game.myChoose) {
                 //先移除之前的显示可以移动点的位置
-                seedsNodes.querySelectorAll('.seed[data-isSeed="false"]').forEach(function (data) {
+                Array.prototype.forEach.call(seedsNodes.querySelectorAll('.seed[data-isSeed="false"]'), function (data) {
                     seedsNodes.removeChild(data);
                 });
 

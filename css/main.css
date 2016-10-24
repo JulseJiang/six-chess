@@ -222,6 +222,10 @@ button.block {
     color: #333;
 }
 
-#logs p.error{
-    color:#f00;
+#logs p.error {
+    color: #f00;
+}
+
+#logs p.game {
+    color: #008800;
 }

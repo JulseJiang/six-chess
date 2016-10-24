@@ -39,10 +39,10 @@ Game.handleInfoEvent = function () {
     //在线联机
     changeOnline.addEventListener('click', function () {
         var room;
-        if (localStorage && localStorage.getItem('myRoom').length == 32) {
+        if (localStorage && localStorage.getItem('myRoom').length == 10) {
             room = localStorage.getItem('myRoom');
         } else {
-            room = hex_md5(new Date() + Math.random());
+            room = hex_md5(new Date() + Math.random()).substr(0, 10);
         }
         var i = location.pathname.indexOf('/', 1);
         var path = location.pathname.substring(0, i);
@@ -62,7 +62,7 @@ Game.handleInfoEvent = function () {
             clipboard.on('success', function (e) {
                 target.disabled = true;
                 target.innerHTML = '已复制';
-                e.clearSelection();
+                //e.clearSelection();
                 location.href = e.text;
             });
             clipboard.on('error', function (e) {
