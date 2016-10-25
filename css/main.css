@@ -114,7 +114,7 @@ button.block {
     background-color: #e0e0e0;
 }
 
-#gameInfo ul.remain li.mime:before {
+#gameInfo ul.remain li.mine:before {
     content: '(我)';
     position: absolute;
     top: 13px;

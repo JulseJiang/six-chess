@@ -14,13 +14,9 @@ window.onload = function () {
  * 开始游戏
  */
 Game.startOnlineGame = function () {
-    /*this.isStart = true;
-     this.loop = 1;
-     this.infoNodes.loopColor.innerHTML = this.seed.colorText[this.loop - 1];
-     this.infoNodes.gameMessage.innerHTML = '游戏中...';*/
+    Game.isStart = true;
     Client.socket.emit('start', Client.getRoom());
     Game.infoNodes.gameMessage.innerHTML = '等待对手开始游戏';
-
 };
 
 /**
@@ -83,34 +79,40 @@ Game.handleInfoEvent = function () {
 
     //认输
     defeat.addEventListener('click', function () {
-        if (!Game.isStart) {
+        if (!Game.isStart || !Game.isStarted) {
             return;
         }
-        new Mask({
+        var mask = new Mask({
             title: '认输',
-            content: '单机版无法认输！'
+            content: '你确定要认输吗？'
+        }, function () {
+            Client.socket.emit('defeat', Client.getRoom());
+            mask.close();
         });
     });
 
     //和棋
     peace.addEventListener('click', function () {
-        if (!Game.isStart) {
+        if (!Game.isStart || !Game.isStarted) {
             return;
         }
-        new Mask({
+        var mask = new Mask({
             title: '和棋',
-            content: '单机版无法和棋！'
+            content: '你确定要和棋吗？'
+        }, function () {
+            Client.socket.emit('peace', Client.getRoom());
+            mask.close();
         });
     });
 
     //重新开始
     startAgain.addEventListener('click', function () {
+        if (!Game.isStart || !Game.isStarted) {
+            return;
+        }
         var mask = new Mask({
             title: '重新开始',
-            content: '您确定要重新开始游戏吗？'
-        }, function (e) {
-            Game.init();
-            mask.close();
+            content: '联机版无法重新开始，请选择认输 或者 和棋？'
         });
     });
 }

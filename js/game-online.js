@@ -10,6 +10,7 @@ var Game = {
     loop: 1, //轮流编号
     isReady: false, //玩家是否已经就绪
     isStart: false, //游戏是否已经开始
+    isStarted: false, //对手是否点击开始
     board: {
         x: 100, //棋盘左上角位置x
         y: 80, //棋盘左上角位置y
@@ -178,11 +179,6 @@ Game.initSeedData = function () {
     var row3 = [opt, 0, 0, choose];
     var row4 = [opt, opt, choose, choose];
 
-    /*var row1 = [opt, 0, 0, 0];
-     var row2 = [opt, opt, choose, 0];
-     var row3 = [opt, 0, 0, 0];
-     var row4 = [opt, 0, 0, 0];*/
-
     this.seed.data.push(row1, row2, row3, row4);
 };
 
@@ -266,7 +262,7 @@ Game.handleSeedClick = function () {
         var isSeed = target.getAttribute('data-isSeed') === 'false' ? false : true;
 
         if (isSeed) {
-            if (!Game.isStart || color !== Game.loop) {
+            if (!Game.isStart || !Game.isStarted || Game.myChoose !== Game.loop || color !== Game.myChoose) {
                 return;
             }
 
@@ -303,8 +299,15 @@ Game.handleSeedClick = function () {
             Game.checkRules(site);
             Game.drawSeeds();
             Game.loop = 3 - Game.loop;
-            Game.infoNodes.loopColor.innerHTML = Game.seed.colorText[Game.loop - 1];
+            Game.infoNodes.loopColor.innerHTML = Game.loop === Game.myChoose ? '我' : '对手';
             document.querySelector('#chessList' + Game.loop + ' .num').innerHTML = Game.getLength(Game.loop);
+
+            //发送游戏数据
+            Client.socket.emit('game', Client.getRoom(), {
+                loop: Game.loop,
+                //data: Client.changeColor(Game.seed.data)
+                data: Game.seed.data
+            });
 
             var winner = Game.getWinner();
             if (winner >= 0) {
@@ -314,7 +317,7 @@ Game.handleSeedClick = function () {
                         result = '平局';
                         break;
                     default:
-                        result = Game.seed.colorText[winner - 1] + '赢了';
+                        result = winner === Game.myChoose ? '你 赢了' : '对手 赢了';
                 }
                 var mask = new Mask({
                     title: '游戏结果',
