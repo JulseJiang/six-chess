@@ -11,6 +11,11 @@ var io = require('socket.io')(3001);
 var Room = {};
 
 /**
+ * 游戏过程记录
+ */
+var Game = {};
+
+/**
  * 返回房间号
  * @param {string} socketId 客户端socketID
  * @return {string}
@@ -67,6 +72,71 @@ function deleteFromRoom(room, socketId) {
 }
 
 /**
+ * 插入游戏过程的数据
+ * @param {string} room 房间号
+ * @param {object} data 游戏数据 对象，包括loop和data
+ */
+function insertToGame(room, data) {
+    if (Game[room] === undefined || !(Game[room] instanceof Array)) {
+        Game[room] = [];
+    }
+    Game[room].push(data);
+}
+
+/**
+ * 初始化游戏房间数据
+ * @param {string} room 房间号
+ * @param {int} loop
+ */
+function initGame(room, loop) {
+    Game[room] = [];
+
+    var choose = 1;
+    var opt = 3 - choose;
+    var row1 = [opt, opt, choose, choose];
+    var row2 = [opt, 0, 0, choose];
+    var row3 = [opt, 0, 0, choose];
+    var row4 = [opt, opt, choose, choose];
+    var arr = [];
+    arr.push(row1, row2, row3, row4);
+    var data = {
+        loop: loop,
+        data: arr
+    };
+    Game[room].push(data);
+}
+
+/**
+ * 删除某个房间的游戏数据
+ * @param {string} room 房间号
+ */
+function deleteFromGame(room) {
+    if (Game[room]) {
+        delete Game[room];
+    }
+}
+
+/**
+ * 获取悔棋之后的游戏数据
+ * @param {string} room 房间号
+ * @param {string} step 悔棋步数
+ * @return {object} 返回游戏数据
+ */
+function getUndoGame(room, step) {
+    var data = {loop: 1, data: []};
+    if (Game[room] && Game[room] instanceof Array) {
+        if (Game[room].length > step) {
+            Game[room].splice(Game[room].length - step, step);
+            data = Game[room][Game[room].length - 1];
+        } else {
+            data = Game[room][0];
+        }
+    }
+    console.log(Game[room]);
+    return data;
+}
+
+/**
  * 监听客户端连接事件
  */
 io.on('connection', function (socket) {
@@ -95,6 +165,7 @@ io.on('connection', function (socket) {
         socket.to(room).emit('leave');
         socket.leave(room);
         deleteFromRoom(room, socket.id);
+        deleteFromGame(room);
     });
 
     //客户端点击开始游戏
@@ -107,6 +178,7 @@ io.on('connection', function (socket) {
         var loop = Math.round(Math.random() + 1);
         var colors = [1, 2];
         var choose = Math.round(Math.random());
+        initGame(room, loop);
         socket.emit('reallyStart', {
             myChoose: colors[choose],
             loop: loop
@@ -125,6 +197,8 @@ io.on('connection', function (socket) {
     //玩家走棋
     socket.on('game', function (room, data) {
         socket.to(room).emit('game', data);
+        insertToGame(room, data);
+        console.log(Game[room]);
     });
 
     //认输
@@ -147,6 +221,24 @@ io.on('connection', function (socket) {
             socket.to(room).emit('surePeace', '对手 不同意和棋', isSure);
         }
     });
+
+    //悔棋
+    socket.on('undo', function (room) {
+        if (Game[room] && Game[room].length)
+            socket.to(room).emit('undo');
+    });
+
+    //对手同意悔棋
+    socket.on('sureUndo', function (room, isSure, step) {
+        if (isSure) {
+            var data = getUndoGame(room, step);
+            socket.emit('sureUndo', data, isSure);
+            socket.to(room).emit('sureUndo', data, isSure);
+        } else {
+            socket.to(room).emit('sureUndo', '对手 不同意悔棋', isSure);
+        }
+    })
+
 });
 
 

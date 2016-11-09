@@ -13,8 +13,8 @@ var Client = {
  * @return {string}
  */
 Client.getRoom = function () {
-    var hash = location.search.trim();
-    return hash.substring(1);
+    var sear = location.search.trim();
+    return sear.substring(1);
 };
 
 /**
@@ -40,12 +40,11 @@ Client.writeRooms = function () {
             var _i = location.pathname.indexOf('/', 1);
             var path = location.pathname.substring(0, _i);
             var url = location.protocol + '//' + location.host + path + '/online.html?' + i;
-            var room = location.search.substr(1);
             a.setAttribute('href', url);
             a.className = 'rooms';
-            a.innerHTML = i + ' (' + Client.rooms[i].length + ')';
+            a.innerHTML = '房间 ' + i + ' (' + Client.rooms[i].length + ')';
             p.appendChild(a);
-            if (i == room) {
+            if (i == Client.getRoom()) {
                 span.className = 'mutted';
                 span.innerHTML = '(我的房间)';
                 p.appendChild(span);
@@ -192,7 +191,6 @@ Client.init = function () {
             Game.infoNodes.loopColor.innerHTML = '对手';
         }
         document.querySelector('#chessList' + Game.myChoose).className = 'mine';
-        //Game.initSeedData();
         Game.drawSeeds();
     });
 
@@ -263,6 +261,41 @@ Client.init = function () {
         });
         if (isSure) {
             Game.init();
+        }
+    });
+
+    //监听对手悔棋事件
+    this.socket.on('undo', function () {
+        var mask = new Mask({
+            title: '悔棋',
+            content: '对手想要悔棋，你同意吗',
+            sureText: '同意',
+            cancelText: '拒绝'
+        }, function () {
+            var step = Game.myChoose == Game.loop ? 1 : 2;
+            Client.socket.emit('sureUndo', Client.getRoom(), true, step);
+            mask.close();
+        }, function () {
+            Client.socket.emit('sureUndo', Client.getRoom(), false);
+            mask.close();
+        });
+    });
+
+    //监听悔棋事件
+    this.socket.on('sureUndo', function (data, isSure) {
+        if (isSure) {
+            Game.loop = data.loop;
+            Game.seed.data = data.data;
+            document.querySelector('#chessList1 .num').innerHTML = Game.getLength(1);
+            document.querySelector('#chessList2 .num').innerHTML = Game.getLength(2);
+            Game.infoNodes.loopColor.innerHTML = Game.loop === Game.myChoose ? '我' : '对手';
+            Game.drawSeeds();
+            Client.addLogs('同意悔棋', 'game');
+        } else {
+            new Mask({
+                title: '悔棋',
+                content: data
+            });
         }
     });
 

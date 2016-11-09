@@ -11,6 +11,7 @@ var Game = {
     isReady: false, //玩家是否已经就绪
     isStart: false, //游戏是否已经开始
     isStarted: false, //对手是否点击开始
+    isMoved: false, //自己是否已经走过棋
     board: {
         x: 100, //棋盘左上角位置x
         y: 80, //棋盘左上角位置y
@@ -108,6 +109,7 @@ Game.init = function () {
     this.myChoose = 1;
     this.loop = 1;
     this.isStart = false;
+    this.isMoved = false;
     this.initSeedData();
     this.drawSeeds();
     this.infoNodes.startGame.disabled = false;
@@ -294,6 +296,7 @@ Game.handleSeedClick = function () {
             }
         } else {
             //移动棋子
+            Game.isMoved = true;
             Game.seed.data[clickSite[0]][clickSite[1]] = 0;
             Game.seed.data[site[0]][site[1]] = color;
             Game.checkRules(site);

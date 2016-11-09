@@ -27,7 +27,7 @@ Game.handleInfoEvent = function () {
     var showRooms = document.getElementById('showRooms');
     var defeat = document.getElementById('defeat');
     var peace = document.getElementById('peace');
-    var startAgain = document.getElementById('startAgain');
+    var undo = document.getElementById('undo');
 
     //开始游戏
     startGame.addEventListener('click', function (e) {
@@ -83,14 +83,26 @@ Game.handleInfoEvent = function () {
         });
     });
 
-    //重新开始
-    startAgain.addEventListener('click', function () {
+    //悔棋
+    undo.addEventListener('click', function () {
         if (!Game.isStart || !Game.isStarted) {
             return;
         }
-        var mask = new Mask({
-            title: '重新开始',
-            content: '联机版无法重新开始，请选择认输 或者 和棋？'
-        });
+        if (Game.isMoved === false) {
+            /*new Mask({
+                title: '悔棋',
+                content: '你还没有走过棋，不能悔棋'
+            });*/
+            return;
+        } else {
+            var mask = new Mask({
+                title: '悔棋',
+                content: '你确定要悔棋吗？'
+            }, function () {
+                Client.socket.emit('undo', Client.getRoom());
+                mask.close();
+            });
+        }
+
     });
-}
+};
