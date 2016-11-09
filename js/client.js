@@ -4,6 +4,7 @@
  */
 
 var Client = {
+    connect_url: 'http://localhost:3001',
     socket: null,
     rooms: {}
 };
@@ -123,7 +124,7 @@ Client.init = function () {
     }
 
     //连接服务器
-    this.socket = io.connect('http://localhost:3001');
+    this.socket = io.connect(Client.connect_url);
 
     //连接成功
     this.socket.on('connect', function () {
