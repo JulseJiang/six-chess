@@ -46,7 +46,7 @@ Game.handleInfoEvent = function () {
         }
         var i = location.pathname.indexOf('/', 1);
         var path = location.pathname.substring(0, i);
-        var url = location.protocol + '//' + location.host + path + '/online.html#' + room;
+        var url = location.protocol + '//' + location.host + path + '/online.html?' + room;
         new Mask({
             title: '在线游戏',
             content: '请将下面的网站复制给好友：<p style="margin-top: 10px;text-decoration: underline;color: #666">' + url + '</p>',

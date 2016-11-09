@@ -11,11 +11,6 @@ var io = require('socket.io')(3001);
 var Room = {};
 
 /**
- * 开始
- */
-var Start = {};
-
-/**
  * 返回房间号
  * @param {string} socketId 客户端socketID
  * @return {string}
@@ -64,6 +59,10 @@ function deleteFromRoom(room, socketId) {
     }
     if (index >= 0) {
         Room[room].splice(index, 1);
+    }
+    //判断当前房间是否为空
+    if (Room[room] && Room[room].length == 0) {
+        delete Room[room];
     }
 }
 
@@ -116,6 +115,11 @@ io.on('connection', function (socket) {
             myChoose: colors[1 - choose],
             loop: loop
         });
+    });
+
+    //显示所有房间
+    socket.on('showRooms', function () {
+        socket.emit('showRooms', Room);
     });
 
     //玩家走棋

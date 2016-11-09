@@ -114,6 +114,10 @@ button.block {
     background-color: #e0e0e0;
 }
 
+#gameInfo ul.remain li.mine {
+    background: #b1d4b1;
+}
+
 #gameInfo ul.remain li.mine:before {
     content: '(我)';
     position: absolute;
@@ -206,6 +210,30 @@ button.block {
     margin-left: 0;
     margin-right: 10px;;
     float: right;
+}
+
+#alert .content a.rooms {
+    font-size: 16px;
+    text-decoration: none;
+    color: #006666;
+    border-bottom: 1px solid #ccc;
+    padding: 1px 4px;
+    display: inline-block;
+    margin-bottom: 5px;
+}
+
+#alert .content a.rooms:hover {
+    font-weight: 600;
+}
+
+#alert .content a.rooms:active {
+    color: #4d90fe;
+}
+
+#alert .content span.mutted {
+    font-size: 16px;
+    color: #777;
+    font-weight:200;
 }
 
 #logs {

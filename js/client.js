@@ -4,7 +4,8 @@
  */
 
 var Client = {
-    socket: null
+    socket: null,
+    rooms: {}
 };
 
 /**
@@ -12,8 +13,50 @@ var Client = {
  * @return {string}
  */
 Client.getRoom = function () {
-    var hash = location.hash.trim();
+    var hash = location.search.trim();
     return hash.substring(1);
+};
+
+/**
+ * 加载所有房间信息
+ */
+Client.loadRooms = function () {
+    this.socket.emit('showRooms');
+    var content = document.querySelector('#alert .content');
+    content.innerHTML = '加载中...';
+};
+
+/**
+ * 写入房间信息
+ */
+Client.writeRooms = function () {
+    var content = document.querySelector('#alert .content');
+    content.innerHTML = '';
+    for (var i in Client.rooms) {
+        if (Client.rooms[i] && Client.rooms[i] instanceof Array) {
+            var p = document.createElement('p');
+            var a = document.createElement('a');
+            var span = document.createElement('span');
+            var _i = location.pathname.indexOf('/', 1);
+            var path = location.pathname.substring(0, _i);
+            var url = location.protocol + '//' + location.host + path + '/online.html?' + i;
+            var room = location.search.substr(1);
+            a.setAttribute('href', url);
+            a.className = 'rooms';
+            a.innerHTML = i + ' (' + Client.rooms[i].length + ')';
+            p.appendChild(a);
+            if (i == room) {
+                span.className = 'mutted';
+                span.innerHTML = '(我的房间)';
+                p.appendChild(span);
+            } else if (Client.rooms[i].length == 2) {
+                span.className = 'mutted';
+                span.innerHTML = '(已满)';
+                p.appendChild(span);
+            }
+            content.appendChild(p);
+        }
+    }
 };
 
 /**
@@ -151,6 +194,12 @@ Client.init = function () {
         document.querySelector('#chessList' + Game.myChoose).className = 'mine';
         //Game.initSeedData();
         Game.drawSeeds();
+    });
+
+    //显示所有房间
+    this.socket.on('showRooms', function (data) {
+        Client.rooms = data;
+        Client.writeRooms();
     });
 
     //监听game事件，玩家走棋

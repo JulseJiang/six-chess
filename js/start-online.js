@@ -24,7 +24,7 @@ Game.startOnlineGame = function () {
  */
 Game.handleInfoEvent = function () {
     var startGame = document.getElementById('startGame');
-    var changeOnline = document.getElementById('changeOnline');
+    var showRooms = document.getElementById('showRooms');
     var defeat = document.getElementById('defeat');
     var peace = document.getElementById('peace');
     var startAgain = document.getElementById('startAgain');
@@ -42,39 +42,17 @@ Game.handleInfoEvent = function () {
         Game.startOnlineGame();
     });
 
-    //在线联机
-    changeOnline.addEventListener('click', function () {
-        var room;
-        if (localStorage && localStorage.getItem('myRoom').length == 10) {
-            room = localStorage.getItem('myRoom');
-        } else {
-            room = hex_md5(new Date() + Math.random()).substr(0, 10);
-        }
-        var i = location.pathname.indexOf('/', 1);
-        var path = location.pathname.substring(0, i);
-        var url = location.protocol + '//' + location.host + path + '/online.html#' + room;
+    //显示所有房间
+    showRooms.addEventListener('click', function () {
         new Mask({
-            title: '在线游戏',
-            content: '请将下面的网站复制给好友：<p style="margin-top: 10px;text-decoration: underline;color: #666">' + url + '</p>',
-            sureText: '复制网址并进入在线版',
+            title: '所有房间',
+            content: '',
+            sureText: '刷新',
             cancelText: '关闭'
         }, function (e) {
-            var target = e.target;
-            var clipboard = new Clipboard('#alert .sureBtn', {
-                target: function () {
-                    return document.querySelector('#alert .content p');
-                }
-            });
-            clipboard.on('success', function (e) {
-                target.disabled = true;
-                target.innerHTML = '已复制';
-                //e.clearSelection();
-                location.href = e.text;
-            });
-            clipboard.on('error', function (e) {
-                alert('复制失败！请手动复制');
-            });
-        })
+            Client.loadRooms();
+        });
+        Client.loadRooms();
     });
 
     //认输
