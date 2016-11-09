@@ -132,7 +132,6 @@ function getUndoGame(room, step) {
             data = Game[room][0];
         }
     }
-    console.log(Game[room]);
     return data;
 }
 
@@ -198,7 +197,6 @@ io.on('connection', function (socket) {
     socket.on('game', function (room, data) {
         socket.to(room).emit('game', data);
         insertToGame(room, data);
-        console.log(Game[room]);
     });
 
     //认输
